@@ -13,7 +13,8 @@ import {
   Unlock, 
   FileText, 
   Loader2, 
-  Stethoscope 
+  Stethoscope,
+  X 
 } from 'lucide-react';
 
 export default function DoctorPage() {
@@ -290,7 +291,6 @@ export default function DoctorPage() {
     }
   };
 
-  // فتح صفحة "التقرير الطبي" المستقلة للمريض
   const handleOpenReportPageModal = (appointment: any) => {
     setSelectedReportApp(appointment);
     setMedicalDiagnosis(appointment.medicalDiagnosis || appointment.doctorReport || '');
@@ -299,7 +299,6 @@ export default function DoctorPage() {
     setIsReportPageModalOpen(true);
   };
 
-  // حفظ وإرسال "التقرير الطبي" مع الـ Spinner
   const handleSaveReportPageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedReportApp) return;
@@ -343,7 +342,7 @@ export default function DoctorPage() {
           </div>
         </div>
 
-        {/* قسم تقرير الإحصائيات (عدد الحجوزات، عدد المناشير المضافة، عدد المواعيد المتاحة) */}
+        {/* قسم تقرير الإحصائيات */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center space-x-4 space-x-reverse">
             <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -590,7 +589,7 @@ export default function DoctorPage() {
           </div>
         </div>
 
-        {/* جدول حجوزات المرضى */}
+        {/* جدول حجوزات المرضى (مع التوافقية الكاملة لأسماء الحقول) */}
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
           <h2 className="text-lg font-bold text-slate-900 mb-4">جميع حجوزات المرضى ({appointments.length})</h2>
           {appointments.length === 0 ? (
@@ -613,11 +612,15 @@ export default function DoctorPage() {
                 <tbody className="divide-y divide-slate-50">
                   {appointments.map((app) => (
                     <tr key={app.id} className="text-slate-700">
-                      <td className="py-3 font-bold text-slate-900">{app.fullName}</td>
-                      <td className="py-3">{app.age} سنة</td>
-                      <td className="py-3">{app.address} ({app.state})</td>
-                      <td className="py-3">{app.medicalHistory}</td>
-                      <td className="py-3 text-blue-600 font-semibold">{app.date}</td>
+                      <td className="py-3 font-bold text-slate-900">
+                        {app.patientName || app.fullName || app.name || 'مريض بدون اسم'}
+                      </td>
+                      <td className="py-3">{app.age ? `${app.age} سنة` : 'غير محدد'}</td>
+                      <td className="py-3">
+                        {app.address || app.city || 'غير محدد'} {app.state || app.district ? `(${app.state || app.district})` : ''}
+                      </td>
+                      <td className="py-3">{app.medicalHistory || 'لا توجد ملاحظات'}</td>
+                      <td className="py-3 text-blue-600 font-semibold">{app.date} | {app.time}</td>
                       <td className="py-3">
                         <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] ${
                           app.status === 'مؤكد' ? 'bg-emerald-50 text-emerald-700' : 
@@ -667,11 +670,16 @@ export default function DoctorPage() {
         </div>
       </main>
 
-      {/* نافذة تعديل الموعد المنبثقة */}
+      {/* نافذة تعديل الموعد المتاح */}
       {isEditSlotModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">تعديل الموعد المتاح</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-slate-900">تعديل الموعد المتاح</h3>
+              <button onClick={() => setIsEditSlotModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <form onSubmit={handleUpdateSlotSubmit} className="space-y-4">
               <div>
                 <label className="block text-slate-700 text-xs font-bold mb-1">القسم الطبي</label>
@@ -683,12 +691,10 @@ export default function DoctorPage() {
                   <option value="العظام">العظام</option>
                 </select>
               </div>
-
               <div>
                 <label className="block text-slate-700 text-xs font-bold mb-1">اسم الطبيب</label>
                 <input type="text" value={editSlotDocName} onChange={(e) => setEditSlotDocName(e.target.value)} required className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-700 text-xs font-bold mb-1">التاريخ</label>
@@ -699,21 +705,12 @@ export default function DoctorPage() {
                   <input type="text" value={editSlotTime} onChange={(e) => setEditSlotTime(e.target.value)} required className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" />
                 </div>
               </div>
-
-              <div className="flex space-x-2 space-x-reverse pt-2">
-                <button 
-                  type="submit" 
-                  disabled={loadingEditSlot}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-2xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse disabled:opacity-70"
-                >
-                  {loadingEditSlot && <Loader2 className="animate-spin h-4 w-4 ml-1" />}
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={loadingEditSlot} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-2xl font-bold text-sm transition flex items-center justify-center">
+                  {loadingEditSlot && <Loader2 className="animate-spin h-4 w-4 ml-2" />}
                   <span>حفظ التعديلات</span>
                 </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsEditSlotModalOpen(false)}
-                  className="px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold text-sm transition"
-                >
+                <button type="button" onClick={() => setIsEditSlotModalOpen(false)} className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold text-sm transition">
                   إلغاء
                 </button>
               </div>
@@ -722,11 +719,16 @@ export default function DoctorPage() {
         </div>
       )}
 
-      {/* نافذة تعديل المنشور المنبثقة */}
+      {/* نافذة تعديل المنشور */}
       {isEditPostModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">تعديل المنشور التوعوي</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-slate-900">تعديل المنشور التوعوي</h3>
+              <button onClick={() => setIsEditPostModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <form onSubmit={handleUpdatePostSubmit} className="space-y-4">
               <div>
                 <label className="block text-slate-700 text-xs font-bold mb-1">القسم الطبي</label>
@@ -738,36 +740,24 @@ export default function DoctorPage() {
                   <option value="العظام">العظام</option>
                 </select>
               </div>
-
               <div>
                 <label className="block text-slate-700 text-xs font-bold mb-1">اسم الطبيب</label>
                 <input type="text" value={editPostDoctorName} onChange={(e) => setEditPostDoctorName(e.target.value)} required className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" />
               </div>
-
               <div>
                 <label className="block text-slate-700 text-xs font-bold mb-1">عنوان المنشور</label>
                 <input type="text" value={editPostTitle} onChange={(e) => setEditPostTitle(e.target.value)} required className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" />
               </div>
-
               <div>
                 <label className="block text-slate-700 text-xs font-bold mb-1">محتوى النصيحة</label>
                 <textarea value={editPostContent} onChange={(e) => setEditPostContent(e.target.value)} rows={3} required className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" />
               </div>
-
-              <div className="flex space-x-2 space-x-reverse pt-2">
-                <button 
-                  type="submit" 
-                  disabled={loadingEditPost}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-bold text-sm transition flex items-center justify-center space-x-2 space-x-reverse disabled:opacity-70"
-                >
-                  {loadingEditPost && <Loader2 className="animate-spin h-4 w-4 ml-1" />}
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={loadingEditPost} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-bold text-sm transition flex items-center justify-center">
+                  {loadingEditPost && <Loader2 className="animate-spin h-4 w-4 ml-2" />}
                   <span>حفظ التعديلات</span>
                 </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsEditPostModalOpen(false)}
-                  className="px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold text-sm transition"
-                >
+                <button type="button" onClick={() => setIsEditPostModalOpen(false)} className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold text-sm transition">
                   إلغاء
                 </button>
               </div>
@@ -776,72 +766,37 @@ export default function DoctorPage() {
         </div>
       )}
 
-      {/* نافذة التقرير الطبي المنبثقة المستقلة */}
+      {/* نافذة إصدار التقرير الطبي */}
       {isReportPageModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center space-x-2 space-x-reverse">
-                <FileText className="w-5 h-5 text-teal-600 ml-1" />
-                <span>إصدار وتعديل التقرير الطبي للمريض</span>
+              <h3 className="text-lg font-bold text-slate-900">
+                إصدار / تعديل التقرير الطبي للمريض: {selectedReportApp?.patientName || selectedReportApp?.fullName}
               </h3>
-              {selectedReportApp && (
-                <span className="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-full font-bold">
-                  {selectedReportApp.fullName}
-                </span>
-              )}
+              <button onClick={() => setIsReportPageModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-
             <form onSubmit={handleSaveReportPageSubmit} className="space-y-4">
               <div>
                 <label className="block text-slate-700 text-xs font-bold mb-1">التشخيص الطبي</label>
-                <textarea 
-                  value={medicalDiagnosis} 
-                  onChange={(e) => setMedicalDiagnosis(e.target.value)} 
-                  placeholder="أدخل التشخيص الطبي المفصل..." 
-                  rows={2} 
-                  required 
-                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" 
-                />
+                <textarea value={medicalDiagnosis} onChange={(e) => setMedicalDiagnosis(e.target.value)} placeholder="أدخل التشخيص..." rows={2} required className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" />
               </div>
-
               <div>
-                <label className="block text-slate-700 text-xs font-bold mb-1">الوصفة الطبية (الأدوية والجرعات)</label>
-                <textarea 
-                  value={prescription} 
-                  onChange={(e) => setPrescription(e.target.value)} 
-                  placeholder="مثال: دواء أ, جرعة ب..." 
-                  rows={2} 
-                  required 
-                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" 
-                />
+                <label className="block text-slate-700 text-xs font-bold mb-1">الوصفة الطبية / العلاج</label>
+                <textarea value={prescription} onChange={(e) => setPrescription(e.target.value)} placeholder="أدخل الأدوية والجرعات..." rows={2} required className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" />
               </div>
-
               <div>
-                <label className="block text-slate-700 text-xs font-bold mb-1">ملاحظات الطبيب والإرشادات</label>
-                <textarea 
-                  value={doctorNotes} 
-                  onChange={(e) => setDoctorNotes(e.target.value)} 
-                  placeholder="تعليمات خاصة للمريض..." 
-                  rows={2} 
-                  className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" 
-                />
+                <label className="block text-slate-700 text-xs font-bold mb-1">ملاحظات وتوجيهات الطبيب</label>
+                <textarea value={doctorNotes} onChange={(e) => setDoctorNotes(e.target.value)} placeholder="تعليمات إضافية للمريض..." rows={2} className="w-full px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:outline-none" />
               </div>
-
-              <div className="flex space-x-2 space-x-reverse pt-2">
-                <button 
-                  type="submit" 
-                  disabled={loadingReportPage}
-                  className="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-2xl font-bold text-sm transition shadow-lg shadow-teal-600/20 flex items-center justify-center space-x-2 space-x-reverse disabled:opacity-70"
-                >
-                  {loadingReportPage && <Loader2 className="animate-spin h-5 w-5 ml-2" />}
-                  <span>اعتماد وإرسال التقرير للمريض</span>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={loadingReportPage} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-2xl font-bold text-sm transition flex items-center justify-center">
+                  {loadingReportPage && <Loader2 className="animate-spin h-4 w-4 ml-2" />}
+                  <span>اعتماد وإرسال التقرير</span>
                 </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsReportPageModalOpen(false)}
-                  className="px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold text-sm transition"
-                >
+                <button type="button" onClick={() => setIsReportPageModalOpen(false)} className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold text-sm transition">
                   إلغاء
                 </button>
               </div>

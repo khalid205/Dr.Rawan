@@ -58,6 +58,15 @@ export default function UserDashboard() {
   const [selectedReportDoctor, setSelectedReportDoctor] = useState('');
   const [showReportModal, setShowReportModal] = useState(false);
 
+  // حالات نافذة إدخال بيانات الحجز الجديدة (فصل المدينة والحي)
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<any>(null);
+  const [patientName, setPatientName] = useState('');
+  const [patientAge, setPatientAge] = useState('');
+  const [patientCity, setPatientCity] = useState('');
+  const [patientDistrict, setPatientDistrict] = useState('');
+  const [medicalHistory, setMedicalHistory] = useState('');
+
   // حالات نافذة التعديل للحجز
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
@@ -99,18 +108,39 @@ export default function UserDashboard() {
     fetchUserData();
   }, [currentUser]);
 
-  const handleBookSlot = async (slot: any) => {
+  // فتح نافذة إدخال تفاصيل الحجز عند الضغط على حجز موعد
+  const handleOpenBookingModal = (slot: any) => {
+    setSelectedSlotForBooking(slot);
+    setPatientName('');
+    setPatientAge('');
+    setPatientCity('');
+    setPatientDistrict('');
+    setMedicalHistory('');
+    setShowBookingModal(true);
+  };
+
+  // تنفيذ الحجز الفعلي وإرسال البيانات لقاعدة البيانات
+  const handleConfirmBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSlotForBooking) return;
+
+    setShowBookingModal(false);
     setLoading(true);
     setStatusMessage('جاري تأكيد حجز الموعد...');
     setShowStatusModal(true);
 
     try {
       await addDoc(collection(db, 'appointments'), {
-        doctorName: slot.doctorName,
-        department: slot.department,
-        date: slot.date,
-        time: slot.time,
+        doctorName: selectedSlotForBooking.doctorName,
+        department: selectedSlotForBooking.department,
+        date: selectedSlotForBooking.date,
+        time: selectedSlotForBooking.time,
         patientEmail: currentUser?.email,
+        patientName: patientName,
+        age: patientAge,
+        city: patientCity,
+        district: patientDistrict,
+        medicalHistory: medicalHistory,
         status: 'قيد الانتظار',
         doctorReport: '', 
         createdAt: serverTimestamp()
@@ -133,7 +163,7 @@ export default function UserDashboard() {
     setShowDeleteModal(true);
   };
 
-  // تأكيد وتنفيد الحذف من قاعدة البيانات مع Spinner
+  // تأكيد وتنفيذ الحذف من قاعدة البيانات مع Spinner
   const handleConfirmDelete = async () => {
     if (!appointmentToDelete) return;
 
@@ -203,6 +233,115 @@ export default function UserDashboard() {
   return (
     <div className="min-h-screen bg-slate-50 font-['Cairo']" dir="rtl">
       <CustomNavbar />
+
+      {/* نافذة إدخال بيانات المريض عند الحجز (مع فصل المدينة والحي) */}
+      {showBookingModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl max-w-md w-full border border-slate-100">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full">نموذج الحجز</span>
+                <h3 className="text-base font-black text-slate-900 mt-1">إدخال تفاصيل حجز الموعد</h3>
+              </div>
+              <button 
+                onClick={() => setShowBookingModal(false)}
+                className="w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full flex items-center justify-center transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmBooking} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">اسم المريض</label>
+                <input 
+                  type="text" 
+                  value={patientName} 
+                  onChange={(e) => setPatientName(e.target.value)}
+                  placeholder="أدخل اسمك الثلاثي"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">العمر</label>
+                <input 
+                  type="number" 
+                  value={patientAge} 
+                  onChange={(e) => setPatientAge(e.target.value)}
+                  placeholder="مثال: 28"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">المدينة</label>
+                  <input 
+                    type="text" 
+                    value={patientCity} 
+                    onChange={(e) => setPatientCity(e.target.value)}
+                    placeholder="اسم المدينة"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">الحي</label>
+                  <input 
+                    type="text" 
+                    value={patientDistrict} 
+                    onChange={(e) => setPatientDistrict(e.target.value)}
+                    placeholder="اسم الحي"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">الطبيب المعالج (المحدد للموعد)</label>
+                <input 
+                  type="text" 
+                  value={selectedSlotForBooking?.doctorName || ''} 
+                  disabled
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs bg-slate-100 text-slate-600 font-bold cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">الحالة الصحية السابقة</label>
+                <textarea 
+                  value={medicalHistory} 
+                  onChange={(e) => setMedicalHistory(e.target.value)}
+                  placeholder="هل تعاني من أمراض مزمنة أو حساسيات سابقة؟"
+                  rows={3}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 resize-none"
+                  required
+                ></textarea>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button 
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
+                >
+                  تأكيد وإرسال الحجز
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setShowBookingModal(false)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold transition"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* نافذة حالة الحجز العامة المنبثقة */}
       {showStatusModal && (
@@ -427,7 +566,7 @@ export default function UserDashboard() {
                         </p>
                       </div>
                       <button 
-                        onClick={() => handleBookSlot(slot)}
+                        onClick={() => handleOpenBookingModal(slot)}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm w-full sm:w-auto"
                       >
                         حجز الموعد
