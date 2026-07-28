@@ -1,75 +1,50 @@
-# React + TypeScript + Vite
+# Dr. Rawan - نظام إدارة المستشفيات والعيادات الطبية
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+تطبيق شبكي تفاعلي متطور مخصص لإدارة المواعيد الطبية، وحجوزات المرضى، ونشر التوجيهات الصحية، وإصدار التقارير الطبية. تم تطوير الواجهة باستخدام **React**, **TypeScript**, و **Tailwind CSS**, مع ربط البيانات وقواعد البيانات عبر **Firebase**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 👥 صلاحيات المستخدمين في النظام (Roles & Access)
 
-## React Compiler
+يعتمد النظام على 3 مستويات رئيسية من الصلاحيات لتنظيم العمل الطبي بكفاءة:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. صلاحيات الطبيب (Doctor)
+تمكن الطبيب من إدارة جانبه المهني بشكل كامل عبر لوحة تحكم مخصصة:
+* **إدارة المواعيد المتاحة:** إضافة مواعيد جديدة للحجز، وتعديلها، أو إغلاقها/فتحها للمرضى حسب الجدول الزمني.
+* **إدارة حجوزات المرضى:** الاطلاع على قائمة الحجوزات الواردة، مع إمكانية **تأكيد** أو **رفض** الحجز.
+* **إصدار التقارير الطبية:** فتح صفحة تقرير مستقلة لكل مريض لإدخال (التشخيص الطبي، الوصفة والأدوية، وملاحظات الطبيب) واعتمادها وإرسالها مباشرة.
+* **النشر التوعوي:** كتابة ونشر مقالات وتوجيهات طبية توعوية للمرضى مع إمكانية تعديلها أو حذفها لاحقاً.
 
-## Expanding the ESLint configuration
+### 2. صلاحيات المريض (Patient)
+تتيح للمرضى التفاعل مع الخدمات الصحية المتاحة:
+* **حجز المواعيد:** استعراض المواعيد المتاحة من قبل الأطباء بحسب الأقسام الطبية وحجزها بسهولة.
+* **متابعة الحجوزات:** عرض حالة الحجوزات الخاصة (معلق، مؤكد، مرفوض).
+* **عرض التقارير والوصفات الطبية:** الاطلاع على التقارير والأدوية الموصوفة من الطبيب فور اعتمادها.
+* **التثقيف الصحي:** تصفح النصائح والمنشورات التوعوية الطبية المضافة من الأطباء.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 3. صلاحيات المسؤول (Admin)
+*(مخصصة لإدارة النظام الشاملة)*
+* إدارة ومراقبة حسابات المستخدمين (أطباء ومرضى).
+* الإشراف على المحتوى العام والبيانات المسجلة في قواعد البيانات عبر Firebase.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🛠️ التقنيات المستخدمة (Tech Stack)
+* **Framework:** React (Vite)
+* **Language:** TypeScript
+* **Styling:** Tailwind CSS
+* **Database & Backend:** Firebase (Firestore / Auth)
+* **Icons:** Lucide React
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
 
-```
+## 🚀 التشغيل المحلي (Local Development)
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. استنسخ المستودع أو افتح مجلد المشروع محلياً:
+   ```bash
+   cd Dr.Rawan
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+   ثبّت الحزم المطلوبة :npm install
+   شغّل خادم التطوير المحلي: npm run dev
+   النشر (Deployment): npm run deploy
+   رابط المشروع لايف :
