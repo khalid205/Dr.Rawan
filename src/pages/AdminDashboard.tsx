@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../services/authService'; 
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'; 
 import { useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 
 function CustomNavbar() {
   const { logout } = useAuth();
@@ -22,7 +23,7 @@ function CustomNavbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="px-4 py-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-blue-600/20 text-sm">
-            Dr.Rawan
+            Dr.Rawan | لوحة التحكم الرئيسية
           </div>
         </div>
 
@@ -31,6 +32,7 @@ function CustomNavbar() {
             onClick={handleLogout}
             className="bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2"
           >
+            <LogOut className="w-4 h-4" />
             <span>تسجيل الخروج</span>
           </button>
         </div>
@@ -44,6 +46,7 @@ export default function AdminDashboard() {
   const [availableSlots, setAvailableSlots] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
   const [medicalReports, setMedicalReports] = useState<any[]>([]);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
 
   // نموذج إضافة موعد طبي جديد للأطباء
   const [doctorName, setDoctorName] = useState('');
@@ -76,6 +79,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [showStatusModal, setShowStatusModal] = useState(false);
+  
 
   const [updatingSlotId, setUpdatingSlotId] = useState<string | null>(null);
   const [updatingAppointmentId, setUpdatingAppointmentId] = useState<string | null>(null);
@@ -816,92 +820,146 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-slate-900">سجل حجوزات المرضى الواردة</h2>
-            <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-xl">{appointments.length} حجز</span>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-right border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-400 text-[11px]">
-                  <th className="pb-3 font-bold">المريض (البريد والاسم)</th>
-                  <th className="pb-3 font-bold">التفاصيل الشخصية (العمر، السكن)</th>
-                  <th className="pb-3 font-bold">الطبيب والموعد</th>
-                  <th className="pb-3 font-bold">الحالة الصحية السابقة</th>
-                  <th className="pb-3 font-bold">الحالة</th>
-                  <th className="pb-3 font-bold text-center">الإجراءات</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 text-xs">
-                {appointments.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 text-slate-400">لا توجد حجوزات واردة حتى الآن</td>
+
+        
+
+<div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-lg font-bold text-slate-900">سجل حجوزات المرضى الواردة</h2>
+        <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-xl">{appointments.length} حجز</span>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-right border-collapse">
+          <thead>
+            <tr className="border-b border-slate-100 text-slate-400 text-[11px]">
+              <th className="pb-3 font-bold">المريض (البريد والاسم)</th>
+              <th className="pb-3 font-bold">التفاصيل الشخصية (العمر، السكن)</th>
+              <th className="pb-3 font-bold">الطبيب والموعد</th>
+              <th className="pb-3 font-bold">الحالة الصحية السابقة</th>
+              <th className="pb-3 font-bold">تقرير الطبيب</th>
+              <th className="pb-3 font-bold">الحالة</th>
+              <th className="pb-3 font-bold text-center">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50 text-xs">
+            {appointments.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8 text-slate-400">لا توجد حجوزات واردة حتى الآن</td>
+              </tr>
+            ) : (
+              appointments.map(app => {
+                const isConfirmed = app.status === 'مؤكد';
+                const isAppointmentUpdating = updatingAppointmentId === app.id;
+                const hasReport = app.doctorReport || app.report || app.diagnosis;
+
+                return (
+                  <tr key={app.id} className="hover:bg-slate-50/50 transition">
+                    <td className="py-4">
+                      <span className="font-bold text-slate-900 block">{app.fullName || app.patientName || 'بدون اسم'}</span>
+                      <span className="text-[11px] text-blue-600">{app.patientEmail || app.email || 'غير متوفر'}</span>
+                    </td>
+
+                    <td className="py-4 text-slate-600">
+                      <span className="block">العمر: {app.age || 'غير محدد'}</span>
+                      <span className="text-[11px] text-slate-400 block">المدينة: {app.city || 'غير محدد'}</span>
+                      <span className="text-[11px] text-slate-400 block">الحي: {app.district || 'غير محدد'}</span>
+                    </td>
+
+                    <td className="py-4">
+                      <span className="font-bold text-slate-800 block">{app.doctorName || 'طبيب عام'}</span>
+                      <span className="text-[11px] text-slate-500">📅 {app.date || app.slotDate} | ⏰ {app.time || app.slotTime}</span>
+                    </td>
+
+                    <td className="py-4 text-slate-600 max-w-xs truncate" title={app.medicalHistory || app.previousCondition || 'لا توجد تفاصيل'}>
+                      {app.medicalHistory || app.previousCondition || 'لا توجد تفاصيل'}
+                    </td>
+
+                    {/* زر عرض التقرير */}
+                    <td className="py-4">
+                      {hasReport ? (
+                        <button
+                          onClick={() => setSelectedReport({ 
+                            patientName: app.fullName || app.patientName, 
+                            report: app.doctorReport || app.report, 
+                            diagnosis: app.diagnosis 
+                          })}
+                          className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm border border-blue-100"
+                        >
+                          <span></span> عرض التقرير
+                        </button>
+                      ) : (
+                        <span className="text-slate-400 text-[11px]">لا يوجد تقرير</span>
+                      )}
+                    </td>
+
+                    <td className="py-4">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${isConfirmed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {app.status || 'قيد الانتظار'}
+                      </span>
+                    </td>
+
+                    <td className="py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => handleToggleAppointmentStatus(app.id, app.status || 'قيد الانتظار')}
+                          disabled={isAppointmentUpdating}
+                          title={isConfirmed ? 'التحويل إلى قيد الانتظار' : 'تأكيد الحجز'}
+                          className={`px-3 py-1.5 rounded-xl font-bold text-[10px] transition shadow-sm ${isConfirmed ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'}`}
+                        >
+                          {isAppointmentUpdating ? 'جاري...' : (isConfirmed ? 'إلغاء التأكيد' : 'تأكيد')}
+                        </button>
+
+                        <button 
+                          onClick={() => setDeleteTarget({ type: 'appointment', id: app.id })}
+                          title="حذف الحجز"
+                          className="w-8 h-8 rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 flex items-center justify-center transition shadow-sm"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                ) : (
-                  appointments.map(app => {
-                    const isConfirmed = app.status === 'مؤكد';
-                    const isAppointmentUpdating = updatingAppointmentId === app.id;
-
-                    return (
-                      <tr key={app.id} className="hover:bg-slate-50/50 transition">
-                        <td className="py-4">
-                          <span className="font-bold text-slate-900 block">{app.fullName || app.patientName || 'بدون اسم'}</span>
-                          <span className="text-[11px] text-blue-600">{app.patientEmail || app.email || 'غير متوفر'}</span>
-                        </td>
-
-                        <td className="py-4 text-slate-600">
-                          <span className="block">العمر: {app.age || 'غير محدد'}</span>
-                          <span className="text-[11px] text-slate-400">السكن: {app.location || app.address || 'غير محدد'}</span>
-                        </td>
-
-                        <td className="py-4">
-                          <span className="font-bold text-slate-800 block">{app.doctorName || 'طبيب عام'}</span>
-                          <span className="text-[11px] text-slate-500">📅 {app.date || app.slotDate} | ⏰ {app.time || app.slotTime}</span>
-                        </td>
-
-                        <td className="py-4 text-slate-600 max-w-xs truncate" title={app.medicalHistory || app.previousCondition || 'لا توجد تفاصيل'}>
-                          {app.medicalHistory || app.previousCondition || 'لا توجد تفاصيل'}
-                        </td>
-
-                        <td className="py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${isConfirmed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {app.status || 'قيد الانتظار'}
-                          </span>
-                        </td>
-
-                        <td className="py-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button 
-                              onClick={() => handleToggleAppointmentStatus(app.id, app.status || 'قيد الانتظار')}
-                              disabled={isAppointmentUpdating}
-                              title={isConfirmed ? 'التحويل إلى قيد الانتظار' : 'تأكيد الحجز'}
-                              className={`px-3 py-1.5 rounded-xl font-bold text-[10px] transition shadow-sm ${isConfirmed ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'}`}
-                            >
-                              {isAppointmentUpdating ? 'جاري...' : (isConfirmed ? 'إلغاء التأكيد' : 'تأكيد')}
-                            </button>
-
-                            <button 
-                              onClick={() => setDeleteTarget({ type: 'appointment', id: app.id })}
-                              title="حذف الحجز"
-                              className="w-8 h-8 rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 flex items-center justify-center transition shadow-sm"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
+      </main>
+      {/* نافذة تقرير الطبيب المنبثقة */}
+{selectedReport && (
+  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-bold text-slate-900 text-sm">تقرير الطبيب للمريض: {selectedReport.patientName}</h3>
+        <button onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+      </div>
+      {selectedReport.diagnosis && (
+        <div className="mb-3 text-xs">
+          <span className="font-bold text-slate-700 block mb-1">التشخيص:</span>
+          <p className="text-blue-600 bg-blue-50 p-2.5 rounded-xl">{selectedReport.diagnosis}</p>
+        </div>
+      )}
+      <div className="mb-4 text-xs">
+        <span className="font-bold text-slate-700 block mb-1">تفاصيل التقرير:</span>
+        <p className="text-slate-600 bg-slate-50 p-3 rounded-xl leading-relaxed">{selectedReport.report || 'لا توجد تفاصيل إضافية في التقرير.'}</p>
+      </div>
+      <button 
+        onClick={() => setSelectedReport(null)}
+        className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition shadow-sm"
+      >
+        إغلاق
+      </button>
+    </div>
+  </div>
+)}
+    </div>
+
+    
   );
 }
